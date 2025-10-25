@@ -8,3 +8,5 @@ app.use(express.json()); // parses incoming requests with json data
 
 // routes
 app.use("/api/items", itemRoutes);
+
+// connect to database and start listening

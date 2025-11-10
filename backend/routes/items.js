@@ -1,5 +1,11 @@
 import express from "express";
-// import item route controllers - getAll, getOne, update, delete
+import {
+  getAllItems,
+  getOneItem,
+  createItem,
+  updateItem,
+  deleteItem,
+} from "../controllers/itemController.js";
 
 const router = express.Router();
 

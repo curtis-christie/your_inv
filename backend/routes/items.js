@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 // import item route controllers - getAll, getOne, update, delete
 
 const router = express.Router();
 
-module.exports = router;
+export default router;

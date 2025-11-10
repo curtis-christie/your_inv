@@ -7,6 +7,7 @@ CIS375 Course Project - Inventory System App(MERN) - Journal
 - created middleware to parse response body data of json
 - created middleware from express to handle "./api/items" requests -> itemsRouter
 - created items Router to handle /api/items routes
+- item schema: imported mongoose, assigned Schema through mongoose,
   NEXT
 - start to flesh out different routes for the CRUD operations when interacting with the items DB
 - test in postman to make sure all routes work

@@ -1,4 +1,4 @@
-import { Van } from "../src/models/van.model.js";
+import { Van } from "../models/van.model.js";
 
 export async function getVans(req, res, next) {
   try {

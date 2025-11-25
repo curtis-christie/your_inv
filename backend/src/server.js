@@ -16,15 +16,13 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/van_in
 app.use(cors());
 app.use(express.json());
 
-// Mount the API router under /api
 app.use("/api", apiRouter);
 
-// Basic root route (optional)
 app.get("/", (req, res) => {
   res.send("Van Inventory API is running.");
 });
 
-// Start server only after DB is connected
+// Start server only after DB connection
 async function startServer() {
   await connectDB(MONGODB_URI);
 

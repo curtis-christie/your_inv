@@ -16,6 +16,11 @@ export default function VanInventoryPage() {
   const [showLowStock, setShowLowStock] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [adjustingItem, setAdjustingItem] = useState(null);
+  const [adjustDelta, setAdjustDelta] = useState(0);
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjustLoading, setAdjustLoading] = useState(false);
+  const [adjustError, setAdjustError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -24,6 +29,48 @@ export default function VanInventoryPage() {
     threshold: "0",
     unit: "",
   });
+
+  function handleAdjustClick(item, presetDelta) {
+    setAdjustingItem(item);
+    setAdjustDelta(presetDelta);
+    setAdjustNote("");
+    setAdjustError("");
+  }
+
+  async function handleSubmitAdjust(e) {
+    e.preventDefault();
+    if (!adjustingItem) return;
+
+    setAdjustLoading(true);
+    setAdjustError("");
+
+    try {
+      const payload = {
+        delta: Number(adjustDelta),
+        note: adjustNote,
+      };
+
+      const res = await axios.post(`${API_BASE_URL}/items/${adjustingItem.id}/adjust`, payload);
+
+      const updatedItem = res.data;
+
+      // Update the items array in-place
+      setItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
+
+      // Close dialog
+      setAdjustingItem(null);
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to adjust quantity.";
+      setAdjustError(msg);
+    } finally {
+      setAdjustLoading(false);
+    }
+  }
+
+  function handleCloseAdjust() {
+    setAdjustingItem(null);
+  }
 
   function handleFormChange(e) {
     const { name, value } = e.target;
@@ -225,7 +272,70 @@ export default function VanInventoryPage() {
           <span className="text-sm text-text-muted">Low stock only</span>
         </label>
       </div>
-      {!loading && !error && <InventoryTable items={filteredItems} />}
+      {!loading && !error && (
+        <InventoryTable items={filteredItems} onAdjustClick={handleAdjustClick} />
+      )}
+
+      {adjustingItem && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+          <div className="bg-card border border-white/10 rounded-2xl p-4 w-full max-w-md">
+            <h3 className="text-sm font-semibold mb-2">Adjust quantity</h3>
+
+            <p className="text-xs text-text-muted mb-3">
+              {adjustingItem.storeItem?.name} (
+              <span className="font-mono">{adjustingItem.storeItem?.sku}</span>)
+            </p>
+
+            <form onSubmit={handleSubmitAdjust} className="space-y-3 text-sm">
+              {adjustError && (
+                <div className="text-danger text-xs bg-danger/20 px-3 py-2 rounded-xl">
+                  {adjustError}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="block text-text-muted text-xs uppercase">
+                  Delta (e.g. -1, +1)
+                </label>
+                <input
+                  type="number"
+                  value={adjustDelta}
+                  onChange={(e) => setAdjustDelta(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-white/10 focus:outline-none focus:border-primary text-text-main"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-text-muted text-xs uppercase">Note (optional)</label>
+                <textarea
+                  rows={3}
+                  value={adjustNote}
+                  onChange={(e) => setAdjustNote(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-white/10 focus:outline-none focus:border-primary text-text-main resize-none"
+                  placeholder="Installed at customer site, returned to store, etc."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseAdjust}
+                  className="px-3 py-2 rounded-xl bg-surface border border-white/10 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={adjustLoading}
+                  className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-medium hover:bg-primary/90 disabled:opacity-60 active:scale-95 transition-transform"
+                >
+                  {adjustLoading ? "Saving…" : "Apply"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

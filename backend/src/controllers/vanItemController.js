@@ -65,17 +65,9 @@ export async function createVanItem(req, res, next) {
       return res.status(400).json({ message: "Invalid vanId" });
     }
 
-    const {
-      name,
-      sku,
-      quantity,
-      threshold,
-      unit,
-      bin,
-      tags, // can be array or comma-separated string on frontend
-    } = req.body;
+    const { name, sku, quantity, threshold, unit } = req.body;
 
-    // Basic validation
+    // Validate
     if (!name || typeof name !== "string") {
       return res.status(400).json({ message: "Name is required" });
     }
@@ -91,19 +83,8 @@ export async function createVanItem(req, res, next) {
       return res.status(400).json({ message: "Threshold must be a non-negative number" });
     }
 
-    // Normalize tags: accept array or comma-separated string
-    let normalizedTags = [];
-    if (Array.isArray(tags)) {
-      normalizedTags = tags.map((t) => String(t).trim()).filter(Boolean);
-    } else if (typeof tags === "string") {
-      normalizedTags = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-    }
-
-    // 1) Find or create StoreItem
-    let storeItem;
+    // 1. Find or create StoreItem
+    let storeItem = null;
 
     if (sku) {
       storeItem = await StoreItem.findOne({ sku });
@@ -116,13 +97,13 @@ export async function createVanItem(req, res, next) {
         sku: finalSku,
         name,
         unit: unit || "pcs",
-        tags: normalizedTags,
         storeQty: 0,
         storeThreshold: 0,
+        tags: [], // unused now
       });
     }
 
-    // 2) Find existing VanItem for this van + store item (upsert behavior)
+    // 2. Upsert the VanItem
     let vanItem = await VanItem.findOne({
       vanId,
       storeItemId: storeItem._id,
@@ -130,12 +111,8 @@ export async function createVanItem(req, res, next) {
 
     if (vanItem) {
       vanItem.quantity += qtyNum;
-      if (threshold !== undefined && threshold !== null) {
-        vanItem.threshold = thresholdNum;
-      }
+      vanItem.threshold = thresholdNum;
       if (unit) vanItem.unit = unit;
-      if (bin) vanItem.bin = bin;
-      if (normalizedTags.length > 0) vanItem.tags = normalizedTags;
 
       await vanItem.save();
     } else {
@@ -145,37 +122,32 @@ export async function createVanItem(req, res, next) {
         quantity: qtyNum,
         threshold: thresholdNum,
         unit: unit || storeItem.unit,
-        bin: bin || "",
-        tags: normalizedTags.length > 0 ? normalizedTags : storeItem.tags,
       });
     }
 
-    // 3) Populate and transform to same shape as getVanItems
-    const populated = await vanItem
-      .populate({ path: "storeItemId", select: "name sku unit tags" })
-      .execPopulate?.(); // older mongoose
-    const doc = populated || vanItem;
+    // 3. Populate and respond
+    const populated = await VanItem.findById(vanItem._id)
+      .populate({ path: "storeItemId", select: "name sku unit" })
+      .lean();
 
-    const store = doc.storeItemId || {};
-    const isLowStock =
-      typeof doc.threshold === "number" && doc.threshold > 0 && doc.quantity <= doc.threshold;
+    const store = populated.storeItemId;
+
+    const isLowStock = populated.threshold > 0 && populated.quantity <= populated.threshold;
 
     const responseItem = {
-      id: doc._id,
-      vanId: doc.vanId,
-      quantity: doc.quantity,
-      threshold: doc.threshold,
-      unit: doc.unit || store.unit || "pcs",
-      bin: doc.bin || "",
-      tags: doc.tags && doc.tags.length > 0 ? doc.tags : store.tags || [],
+      id: populated._id,
+      vanId: populated.vanId,
+      quantity: populated.quantity,
+      threshold: populated.threshold,
+      unit: populated.unit || store.unit,
       storeItem: {
         id: store._id,
         name: store.name,
         sku: store.sku,
       },
       isLowStock,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
+      createdAt: populated.createdAt,
+      updatedAt: populated.updatedAt,
     };
 
     res.status(201).json(responseItem);

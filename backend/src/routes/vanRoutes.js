@@ -10,4 +10,6 @@ router.get("/", getVans);
 // GET /api/vans/:vanId/items
 router.get("/:vanId/items", getVanItems);
 
+router.post("/:vanId/items", createVanItem);
+
 export default router;

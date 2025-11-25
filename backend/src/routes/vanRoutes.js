@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getVans } from "../controllers/vanController.js";
 import { createVanItem, getVanItems } from "../controllers/vanItemController.js";
+import { getVanLogs } from "../controllers/logController.js";
 
 const router = Router();
 
@@ -9,7 +10,9 @@ router.get("/", getVans);
 
 // GET /api/vans/:vanId/items
 router.get("/:vanId/items", getVanItems);
-
 router.post("/:vanId/items", createVanItem);
+
+// /api/:vanId/logs
+router.get("/:vanId/logs", getVanLogs);
 
 export default router;

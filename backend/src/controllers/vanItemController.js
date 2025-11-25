@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { VanItem } from "../models/vanItem.model.js";
+import { VanItem } from "../src/models/vanItem.model.js";
 
 export async function getVanItems(req, res, next) {
   try {

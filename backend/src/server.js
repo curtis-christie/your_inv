@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import apiRouter from "./routes/index.js";
 
 dotenv.config();
+console.log("[server] NODE_ENV:", JSON.stringify(process.env.NODE_ENV));
 
 const app = express();
 

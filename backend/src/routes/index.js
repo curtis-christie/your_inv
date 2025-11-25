@@ -4,8 +4,6 @@ import devRouter from "./devRoutes.js";
 
 const router = Router();
 
-console.log("[api] NODE_ENV:", JSON.stringify(process.env.NODE_ENV));
-
 // /api/health
 router.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

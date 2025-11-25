@@ -327,7 +327,7 @@ export default function VanInventoryPage() {
           />
         </div>
 
-        <div className="bg-card/60 border border-white/5 rounded-2xl p-4 min-h-[80px]">
+        <div className="bg-card/60 border border-white/5 rounded-2xl p-4 min-h-20">
           {logsLoading && <p className="text-xs text-text-muted">Loading activity…</p>}
 
           {logsError && (

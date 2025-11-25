@@ -21,6 +21,10 @@ export default function VanInventoryPage() {
   const [adjustNote, setAdjustNote] = useState("");
   const [adjustLoading, setAdjustLoading] = useState(false);
   const [adjustError, setAdjustError] = useState("");
+  const [logs, setLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [logsError, setLogsError] = useState("");
+  const [logsSearch, setLogsSearch] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -147,6 +151,29 @@ export default function VanInventoryPage() {
     loadItems();
   }, [vanId]);
 
+  // Fetch Logs for this van
+  useEffect(() => {
+    async function loadLogs() {
+      try {
+        setLogsLoading(true);
+        setLogsError("");
+
+        const res = await axios.get(`${API_BASE_URL}/vans/${vanId}/logs`, {
+          params: { limit: 50 },
+        });
+
+        setLogs(res.data);
+      } catch (err) {
+        console.error(err);
+        setLogsError("Failed to load activity log.");
+      } finally {
+        setLogsLoading(false);
+      }
+    }
+
+    loadLogs();
+  }, [vanId]);
+
   const filteredItems = items.filter((item) => {
     const store = item.storeItem || {};
     const matchesSearch =
@@ -156,6 +183,17 @@ export default function VanInventoryPage() {
     const passesLowStock = showLowStock ? item.isLowStock : true;
 
     return matchesSearch && passesLowStock;
+  });
+
+  const filteredLogs = logs.filter((log) => {
+    if (!logsSearch) return true;
+    const term = logsSearch.toLowerCase();
+
+    const name = (log.storeItem?.name || "").toLowerCase();
+    const sku = String(log.storeItem?.sku || "").toLowerCase();
+    const note = (log.note || "").toLowerCase();
+
+    return name.includes(term) || sku.includes(term) || note.includes(term);
   });
 
   return (
@@ -275,6 +313,78 @@ export default function VanInventoryPage() {
       {!loading && !error && (
         <InventoryTable items={filteredItems} onAdjustClick={handleAdjustClick} />
       )}
+
+      {/* Log History */}
+      <div className="space-y-3 mt-8">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold">Recent activity</h3>
+          <input
+            type="text"
+            value={logsSearch}
+            onChange={(e) => setLogsSearch(e.target.value)}
+            placeholder="Search logs (name, SKU, note)…"
+            className="px-3 py-1.5 rounded-xl bg-surface border border-white/10 text-xs focus:outline-none focus:border-primary text-text-main placeholder:text-text-muted max-w-xs"
+          />
+        </div>
+
+        <div className="bg-card/60 border border-white/5 rounded-2xl p-4 min-h-[80px]">
+          {logsLoading && <p className="text-xs text-text-muted">Loading activity…</p>}
+
+          {logsError && (
+            <p className="text-xs text-danger bg-danger/20 px-2 py-1 rounded-lg inline-block">
+              {logsError}
+            </p>
+          )}
+
+          {!logsLoading && !logsError && filteredLogs.length === 0 && (
+            <p className="text-xs text-text-muted">No activity logged yet.</p>
+          )}
+
+          {!logsLoading && !logsError && filteredLogs.length > 0 && (
+            <ul className="space-y-2 max-h-72 overflow-y-auto">
+              {filteredLogs.map((log) => {
+                const store = log.storeItem || {};
+                const isIncrease = log.delta > 0;
+                const deltaSign = isIncrease ? "+" : "";
+                const deltaColor = isIncrease ? "text-success" : "text-danger";
+
+                const date = new Date(log.createdAt);
+                const formattedTime = date.toLocaleString();
+
+                return (
+                  <li
+                    key={log.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/5 pb-2 last:border-b-0"
+                  >
+                    <div className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className={deltaColor}>
+                          {deltaSign}
+                          {log.delta}
+                        </span>
+                        <span className="text-text-main">{store.name || "Unknown item"}</span>
+                        {store.sku && (
+                          <span className="text-text-muted font-mono text-[10px]">
+                            [{store.sku}]
+                          </span>
+                        )}
+                      </div>
+                      {log.note && (
+                        <div className="text-[11px] text-text-muted mt-1">{log.note}</div>
+                      )}
+                    </div>
+
+                    <div className="text-right text-[10px] text-text-muted">
+                      <div>Qty: {log.resultingQty}</div>
+                      <div>{formattedTime}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
 
       {adjustingItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">

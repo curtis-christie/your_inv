@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+@theme {
+  /* Our dark design system tokens */
+  --color-background: #0e1117;
+  --color-surface: #1a1d23;
+  --color-card: #242832;
+  --color-primary: #3d6aff;
+  --color-primary-soft: #3d6aff22;
+  --color-text-main: #ffffff;
+  --color-text-muted: #c1c5d0;
+  --color-danger: #ff3b3b;
+  --color-success: #40c463;
+  --color-warning: #ffb938;
+
+  --radius-xl: 0.9rem;
+  --radius-2xl: 1.25rem;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+/* Global base styles */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+}

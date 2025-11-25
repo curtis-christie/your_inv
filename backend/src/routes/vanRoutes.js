@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getVans } from "../controllers/vanController.js";
-import { getVanItems } from "../controllers/vanItemController.js";
+import { createVanItem, getVanItems } from "../controllers/vanItemController.js";
 
 const router = Router();
 

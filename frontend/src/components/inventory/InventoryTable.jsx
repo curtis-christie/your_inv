@@ -1,4 +1,4 @@
-export default function InventoryTable({ items }) {
+export default function InventoryTable({ items, onAdjustClick }) {
   if (!items || items.length === 0) {
     return (
       <div className="bg-card p-4 rounded-2xl border border-white/5 text-text-muted">
@@ -19,6 +19,7 @@ export default function InventoryTable({ items }) {
             <th className="px-4 py-3 text-left">Bin</th>
             <th className="px-4 py-3 text-left">Tags</th>
             <th className="px-4 py-3 text-left">Status</th>
+            <th className="px-4 py-3 text-left">Actions</th>
           </tr>
         </thead>
 
@@ -47,6 +48,24 @@ export default function InventoryTable({ items }) {
                       OK
                     </span>
                   )}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAdjustClick(item, -1)}
+                      className="px-2 py-1 rounded-lg text-xs bg-surface border border-white/10 hover:border-danger/70 hover:text-danger"
+                    >
+                      −1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onAdjustClick(item, 1)}
+                      className="px-2 py-1 rounded-lg text-xs bg-surface border border-white/10 hover:border-success/70 hover:text-success"
+                    >
+                      +1
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

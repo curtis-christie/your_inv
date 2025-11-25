@@ -4,6 +4,9 @@ import devRouter from "./devRoutes.js";
 
 const router = Router();
 
+console.log("[api] NODE_ENV:", JSON.stringify(process.env.NODE_ENV));
+
+// /api/health
 router.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
@@ -11,6 +14,7 @@ router.get("/health", (req, res) => {
 // Mount vans router under /api/vans
 router.use("/vans", vansRouter);
 if (process.env.NODE_ENV === "development") {
+  // api/dev
   router.use("/dev", devRouter);
 }
 

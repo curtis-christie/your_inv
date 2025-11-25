@@ -1,4 +1,3 @@
-// src/controllers/vanItemController.js
 import mongoose from "mongoose";
 import { VanItem } from "../models/vanItem.model.js";
 

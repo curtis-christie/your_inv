@@ -1,4 +1,3 @@
-// src/models/vanItem.model.js
 import mongoose from "mongoose";
 
 const vanItemSchema = new mongoose.Schema(

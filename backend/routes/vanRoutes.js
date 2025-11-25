@@ -1,4 +1,3 @@
-// src/routes/vanRoutes.js
 import { Router } from "express";
 import { getVans } from "../controllers/vanController.js";
 import { getVanItems } from "../controllers/vanItemController.js";

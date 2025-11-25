@@ -1,4 +1,3 @@
-// src/controllers/vanController.js
 import { Van } from "../models/van.model.js";
 
 export async function getVans(req, res, next) {

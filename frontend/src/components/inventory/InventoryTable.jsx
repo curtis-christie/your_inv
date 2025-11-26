@@ -1,3 +1,4 @@
+// frontend\src\components\inventory\InventoryTable.jsx
 export default function InventoryTable({ items, onAdjustClick }) {
   if (!items || items.length === 0) {
     return (

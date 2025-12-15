@@ -155,3 +155,87 @@ export async function createVanItem(req, res, next) {
     next(err);
   }
 }
+
+export async function updateVanItem(req, res, next) {
+  try {
+    const { vanItemId } = req.params;
+
+    if (!mongoose.isValidObjectId(vanItemId)) {
+      return res.status(400).json({ message: "Invalid vanItemId" });
+    }
+
+    const { name, sku, threshold, unit } = req.body;
+
+    const vanItem = await VanItem.findById(vanItemId).populate("storeItemId");
+
+    if (!vanItem) {
+      return res.status(404).json({ message: "Van item not found" });
+    }
+
+    const storeItem = await StoreItem.findById(vanItem.storeItemId);
+
+    // Update storeItem fields
+    if (name) storeItem.name = name;
+    if (sku) storeItem.sku = sku;
+    if (unit) {
+      storeItem.unit = unit;
+      vanItem.unit = unit;
+    }
+
+    // Threshold belongs to the VanItem
+    if (threshold !== undefined) {
+      const tNum = Number(threshold);
+      if (!Number.isFinite(tNum) || tNum < 0) {
+        return res.status(400).json({ message: "Threshold must be non-negative" });
+      }
+      vanItem.threshold = tNum;
+    }
+
+    await storeItem.save();
+    await vanItem.save();
+
+    const populated = await VanItem.findById(vanItemId)
+      .populate({ path: "storeItemId", select: "name sku unit" })
+      .lean();
+
+    const isLowStock = populated.threshold > 0 && populated.quantity <= populated.threshold;
+
+    res.json({
+      id: populated._id,
+      vanId: populated.vanId,
+      quantity: populated.quantity,
+      threshold: populated.threshold,
+      unit: populated.unit,
+      storeItem: {
+        id: populated.storeItemId._id,
+        name: populated.storeItemId.name,
+        sku: populated.storeItemId.sku,
+      },
+      isLowStock,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteVanItem(req, res, next) {
+  try {
+    const { vanItemId } = req.params;
+
+    if (!mongoose.isValidObjectId(vanItemId)) {
+      return res.status(400).json({ message: "Invalid vanItemId" });
+    }
+
+    const vanItem = await VanItem.findById(vanItemId);
+
+    if (!vanItem) {
+      return res.status(404).json({ message: "Van item not found" });
+    }
+
+    await VanItem.deleteOne({ _id: vanItemId });
+
+    res.json({ message: "Item removed from van" });
+  } catch (err) {
+    next(err);
+  }
+}

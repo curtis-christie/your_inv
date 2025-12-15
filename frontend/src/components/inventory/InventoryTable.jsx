@@ -1,5 +1,5 @@
 // frontend\src\components\inventory\InventoryTable.jsx
-export default function InventoryTable({ items, onAdjustClick }) {
+export default function InventoryTable({ items, onAdjustClick, onEditClick, onDeleteClick }) {
   if (!items || items.length === 0) {
     return (
       <div className="bg-card p-4 rounded-2xl border border-white/5 text-text-muted">
@@ -17,8 +17,6 @@ export default function InventoryTable({ items, onAdjustClick }) {
             <th className="px-4 py-3 text-left">SKU</th>
             <th className="px-4 py-3 text-left">Qty</th>
             <th className="px-4 py-3 text-left">Unit</th>
-            <th className="px-4 py-3 text-left">Bin</th>
-            <th className="px-4 py-3 text-left">Tags</th>
             <th className="px-4 py-3 text-left">Status</th>
             <th className="px-4 py-3 text-left">Actions</th>
           </tr>
@@ -35,10 +33,6 @@ export default function InventoryTable({ items, onAdjustClick }) {
                 <td className="px-4 py-3 text-text-muted">{store.sku}</td>
                 <td className="px-4 py-3">{item.quantity}</td>
                 <td className="px-4 py-3">{item.unit}</td>
-                <td className="px-4 py-3">{item.bin || "-"}</td>
-                <td className="px-4 py-3 text-text-muted">
-                  {item.tags?.length > 0 ? item.tags.join(", ") : "-"}
-                </td>
                 <td className="px-4 py-3">
                   {isLow ? (
                     <span className="text-warning font-medium bg-warning/20 px-2 py-1 rounded-xl text-xs">
@@ -51,7 +45,8 @@ export default function InventoryTable({ items, onAdjustClick }) {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {/* Quick adjust buttons */}
                     <button
                       type="button"
                       onClick={() => onAdjustClick(item, -1)}
@@ -59,12 +54,30 @@ export default function InventoryTable({ items, onAdjustClick }) {
                     >
                       −1
                     </button>
+
                     <button
                       type="button"
                       onClick={() => onAdjustClick(item, 1)}
                       className="px-2 py-1 rounded-lg text-xs bg-surface border border-white/10 hover:border-success/70 hover:text-success"
                     >
                       +1
+                    </button>
+
+                    {/* Edit/Delete */}
+                    <button
+                      type="button"
+                      onClick={() => onEditClick(item)}
+                      className="px-2 py-1 rounded-lg text-xs bg-surface border border-white/10 hover:border-warning/70 hover:text-warning"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDeleteClick(item.id)}
+                      className="px-2 py-1 rounded-lg text-xs bg-surface border border-white/10 hover:border-danger/70 hover:text-danger"
+                    >
+                      Delete
                     </button>
                   </div>
                 </td>

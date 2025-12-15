@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import InventoryTable from "../components/inventory/InventoryTable.jsx";
+import EditItemModal from "../components/inventory/EditItemModal.jsx";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
@@ -25,6 +26,16 @@ export default function VanInventoryPage() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [logsError, setLogsError] = useState("");
   const [logsSearch, setLogsSearch] = useState("");
+  const [editItem, setEditItem] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const [editForm, setEditForm] = useState({
+    name: "",
+    sku: "",
+    threshold: "0",
+    unit: "",
+  });
 
   const [form, setForm] = useState({
     name: "",
@@ -60,6 +71,11 @@ export default function VanInventoryPage() {
 
       // Update the items array in-place
       setItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
+
+      const logsRes = await axios.get(`${API_BASE_URL}/vans/${vanId}/logs`, {
+        params: { limit: 50 },
+      });
+      setLogs(logsRes.data);
 
       // Close dialog
       setAdjustingItem(null);
@@ -115,6 +131,68 @@ export default function VanInventoryPage() {
     } finally {
       setCreating(false);
     }
+  }
+
+  function openEditModal(item) {
+    setEditItem(item);
+    setEditError("");
+    setEditForm({
+      name: item.storeItem?.name || "",
+      sku: item.storeItem?.sku || "",
+      threshold: String(item.threshold ?? 0),
+      unit: item.unit || "",
+    });
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    if (!editItem) return;
+
+    try {
+      setEditSaving(true);
+      setEditError("");
+
+      await axios.patch(`${API_BASE_URL}/vans/items/${editItem.id}`, {
+        name: editForm.name,
+        sku: editForm.sku,
+        threshold: Number(editForm.threshold),
+        unit: editForm.unit || undefined,
+      });
+
+      const res = await axios.get(`${API_BASE_URL}/vans/${vanId}/items`);
+      setItems(res.data);
+
+      closeEditModal();
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to update item.";
+      setEditError(msg);
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  function closeEditModal() {
+    setEditError("");
+    setEditItem(null);
+  }
+
+  async function handleDelete(vanItemId) {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+
+    try {
+      await axios.delete(`${API_BASE_URL}/vans/items/${vanItemId}`);
+
+      // Refresh list
+      const res = await axios.get(`${API_BASE_URL}/vans/${vanId}/items`);
+      setItems(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function handleEditChange(e) {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   }
 
   // Fetch van list to show the van name
@@ -289,6 +367,27 @@ export default function VanInventoryPage() {
           </div>
         </form>
       </div>
+
+      <div className="flex gap-3 mt-4">
+        <button
+          onClick={() => window.open(`${API_BASE_URL}/vans/${vanId}/items.csv`, "_blank")}
+          className="px-4 py-2 rounded-xl bg-surface border border-white/10 
+              text-sm hover:border-primary/60"
+        >
+          Export CSV
+        </button>
+
+        <button
+          onClick={() =>
+            window.open(`${API_BASE_URL}/vans/${vanId}/items.csv?lowStock=true`, "_blank")
+          }
+          className="px-4 py-2 rounded-xl bg-surface border border-white/10 
+              text-sm hover:border-warning/60"
+        >
+          Export Low Stock
+        </button>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Search */}
         <input
@@ -311,8 +410,24 @@ export default function VanInventoryPage() {
         </label>
       </div>
       {!loading && !error && (
-        <InventoryTable items={filteredItems} onAdjustClick={handleAdjustClick} />
+        <InventoryTable
+          items={filteredItems}
+          onAdjustClick={handleAdjustClick}
+          onEditClick={openEditModal}
+          onDeleteClick={handleDelete}
+        />
       )}
+
+      <EditItemModal
+        isOpen={Boolean(editItem)}
+        item={editItem}
+        form={editForm}
+        onChange={handleEditChange}
+        onSubmit={handleEditSubmit}
+        onClose={closeEditModal}
+        saving={editSaving}
+        error={editError}
+      />
 
       {/* Log History */}
       <div className="space-y-3 mt-8">
